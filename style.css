@@ -105,6 +105,8 @@ ul.history-list li {
   -o-transition: background-color 0.3s ease;
 }
 
+
+
 .btn-topup:hover {
   background-color: #ff3b1b;
 }
@@ -532,7 +534,7 @@ footer {
 
 .input-field input {
     width: 100%;
-    padding: 15px 15px 15px 45px;
+    padding: 15px 10px;
     border: none;
     border-radius: 10px;
     background-color: #f5f5f5;

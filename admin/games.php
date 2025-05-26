@@ -75,7 +75,7 @@ if (isset($_GET['edit'])) {
         }
         .form-section input, .form-section textarea {
             width: 100%;
-            padding: 10px;
+            padding: 15px 5px;
             margin: 10px 0;
             border: none;
             border-radius: 5px;

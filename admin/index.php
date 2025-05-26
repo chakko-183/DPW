@@ -61,7 +61,7 @@ $success_transactions = $db->single()['total'];
         .admin-nav a {
             background: #ff4b2b;
             color: white;
-            padding: 15px 25px;
+            padding: 15px 40px;
             text-decoration: none;
             border-radius: 5px;
             transition: background 0.3s;
