@@ -2,6 +2,11 @@
 session_start();
 require_once 'config/database.php';
 
+$message = '';
+$message_type = '';
+$token_valid = false;
+$token = $_GET['token'] ?? '';
+
 // Get unread notification count for the current user
 $unread_notifications_count = 0;
 if (isset($_SESSION['user_id'])) {
@@ -14,27 +19,60 @@ if (isset($_SESSION['user_id'])) {
 }
 
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $email = $_POST['email'];
-    $password = $_POST['password'];
-
-    $db->query('SELECT * FROM users WHERE email = :email');
-    $db->bind(':email', $email);
+if (empty($token)) {
+    $message = "Tautan reset tidak valid.";
+    $message_type = "danger";
+} else {
+    $db->query('SELECT id, email, reset_token_expiry FROM users WHERE reset_token = :token');
+    $db->bind(':token', $token);
     $user = $db->single();
 
-    if ($user && $password === $user['password']) {
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['email'] = $user['email'];
-        $_SESSION['role'] = $user['role'];
+    if ($user) {
+        $current_time = new DateTime();
+        $expiry_time = new DateTime($user['reset_token_expiry']);
 
-        if ($user['role'] === 'admin') {
-            header('Location: admin/index.php');
-        } elseif ($user['role'] === 'user') {
-            header('Location: daftar-game.php');
+        if ($current_time < $expiry_time) {
+            $token_valid = true;
+        } else {
+            $message = "Tautan reset telah kadaluarsa. Silakan minta tautan baru.";
+            $message_type = "danger";
         }
-        exit();
     } else {
-        $error = "Email atau password salah!";
+        $message = "Tautan reset tidak valid atau sudah digunakan.";
+        $message_type = "danger";
+    }
+}
+
+if ($token_valid && $_SERVER['REQUEST_METHOD'] == 'POST') {
+    $new_password = $_POST['password'];
+    $confirm_password = $_POST['confirm_password'];
+
+    if (empty($new_password) || empty($confirm_password)) {
+        $message = "Password baru dan konfirmasi password harus diisi.";
+        $message_type = "danger";
+    } elseif ($new_password !== $confirm_password) {
+        $message = "Konfirmasi password tidak cocok.";
+        $message_type = "danger";
+    } elseif (strlen($new_password) < 6) {
+        $message = "Password minimal 6 karakter.";
+        $message_type = "danger";
+    } else {
+        $hashed_password = $new_password; // Hashing is strongly recommended for production: password_hash($new_password, PASSWORD_DEFAULT);
+
+        $db->query('UPDATE users SET password = :password, reset_token = NULL, reset_token_expiry = NULL WHERE id = :id');
+        $db->bind(':password', $hashed_password);
+        $db->bind(':id', $user['id']);
+
+        if ($db->execute()) {
+            $message = "Password Anda berhasil diatur ulang! Silakan login.";
+            $message_type = "success";
+            $token_valid = false;
+            header('Refresh: 3; URL=index.php');
+            exit();
+        } else {
+            $message = "Terjadi kesalahan saat mengatur ulang password. Silakan coba lagi.";
+            $message_type = "danger";
+        }
     }
 }
 ?>
@@ -45,18 +83,21 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Top Up Game - Beranda</title>
+    <title>Reset Password</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 
 <body>
+    <div class="loading-container">Loading</div>
+
     <header>
-        <h1 class="fade-in">Selamat Datang di Top Up Game</h1>
+        <h1 class="fade-in">Reset Password</h1>
         <nav>
             <a href="index.php">Beranda</a>
-            <!-- <a href="riwayat.php">Riwayat</a> -->
-            <!-- <a href="ulasan.php">Ulasan</a>
+            <a href="daftar-game.php">Daftar Game</a>
+            <a href="riwayat.php">Riwayat</a>
+            <a href="ulasan.php">Ulasan</a>
             <a href="wishlist.php">Wishlist</a>
             <div class="notification-icon-wrapper">
                 <a href="notifications.php" title="Notifikasi Anda">
@@ -65,7 +106,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <span class="notification-badge"><?php echo $unread_notifications_count; ?></span>
                     <?php endif; ?>
                 </a>
-            </div> -->
+            </div>
             <?php if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin'): ?>
                 <a href="admin/index.php">Admin Panel</a>
             <?php endif; ?>
@@ -80,50 +121,40 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <div class="form-container">
                 <div class="right-container">
                     <div class="right-inner-container">
-                        <h2>Login ke Akun Anda</h2>
+                        <h2>Atur Ulang Password Baru</h2>
 
-                        <?php if (isset($error)): ?>
-                            <div class="alert alert-danger">
-                                <?php echo $error; ?>
-                            </div>
-                        <?php endif; ?>
-                        <?php if (isset($_GET['registered']) && $_GET['registered'] == 1): ?>
-                            <div class="alert alert-success">
-                                Registrasi berhasil! Silakan login.
+                        <?php if ($message): ?>
+                            <div class="alert alert-<?php echo $message_type; ?>">
+                                <?php echo $message; ?>
                             </div>
                         <?php endif; ?>
 
+                        <?php if ($token_valid): ?>
+                            <form method="POST">
+                                <input type="hidden" name="token" value="<?php echo htmlspecialchars($token); ?>">
 
-                        <form method="POST">
-                            <div class="input-field">
-                                <input type="email" id="email" name="email" required autocomplete="off" placeholder=" ">
-                                <label for="email">Email Address</label>
-                                <i class="fas fa-envelope"></i>
-                            </div>
-
-                            <div class="input-field">
-                                <input type="password" id="password" name="password" required autocomplete="off" placeholder=" ">
-                                <label for="password">Password</label>
-                                <i class="fas fa-lock"></i>
-                                <i class="fas fa-eye-slash toggle-password"></i>
-                            </div>
-
-                            <div class="options-container">
-                                <div class="remember-me">
-                                    <input type="checkbox" id="remember">
-                                    <label for="remember">Ingat saya</label>
+                                <div class="input-field">
+                                    <input type="password" id="password" name="password" required autocomplete="new-password" placeholder=" ">
+                                    <label for="password">Password Baru</label>
+                                    <i class="fas fa-lock"></i>
+                                    <i class="fas fa-eye-slash toggle-password"></i>
                                 </div>
-                                <a href="forgot_password.php" class="forgot-password">Lupa Password?</a>
-                            </div>
 
-                            <button type="submit" class="btn-primary login-btn">
-                                <span>Login Sekarang</span>
-                                <i class="fas fa-arrow-right"></i>
-                            </button>
-                        </form>
+                                <div class="input-field">
+                                    <input type="password" id="confirm_password" name="confirm_password" required autocomplete="new-password" placeholder=" ">
+                                    <label for="confirm_password">Konfirmasi Password Baru</label>
+                                    <i class="fas fa-lock"></i>
+                                </div>
+
+                                <button type="submit" class="btn-primary login-btn">
+                                    <span>Reset Password</span>
+                                    <i class="fas fa-redo"></i>
+                                </button>
+                            </form>
+                        <?php endif; ?>
 
                         <div class="register-link">
-                            <p>Belum punya akun? <a href="register.php">Daftar Sekarang</a></p>
+                            <p><a href="index.php">Kembali ke Login</a></p>
                         </div>
                     </div>
                 </div>

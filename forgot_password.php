@@ -2,10 +2,8 @@
 session_start();
 require_once 'config/database.php';
 
-if (!isset($_SESSION['topup_data'])) {
-    header('Location: daftar-game.php');
-    exit();
-}
+$message = '';
+$message_type = '';
 
 // Get unread notification count for the current user
 $unread_notifications_count = 0;
@@ -20,9 +18,44 @@ if (isset($_SESSION['user_id'])) {
 
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $_SESSION['topup_data']['payment_method'] = $_POST['metode'];
-    header('Location: konfirmasi.php');
-    exit();
+    $email = $_POST['email'];
+
+    $db->query('SELECT id FROM users WHERE email = :email');
+    $db->bind(':email', $email);
+    $user = $db->single();
+
+    if ($user) {
+        $token = bin2hex(random_bytes(32));
+        $expiry = date('Y-m-d H:i:s', strtotime('+1 hour'));
+
+        $db->query('UPDATE users SET reset_token = :token, reset_token_expiry = :expiry WHERE id = :id');
+        $db->bind(':token', $token);
+        $db->bind(':expiry', $expiry);
+        $db->bind(':id', $user['id']);
+
+        if ($db->execute()) {
+            $reset_link = "http://" . $_SERVER['HTTP_HOST'] . "/reset_password.php?token=" . $token;
+            $subject = "Reset Password Akun Top Up Game Anda";
+            $body = "Halo,\n\n"
+                . "Anda telah meminta reset password. Silakan klik tautan berikut untuk mengatur ulang password Anda:\n"
+                . $reset_link . "\n\n"
+                . "Tautan ini akan kadaluarsa dalam 1 jam.\n"
+                . "Jika Anda tidak meminta ini, abaikan email ini.\n\n"
+                . "Terima kasih,\nTim Top Up Game";
+
+            // mail($email, $subject, $body, "From: no-reply@yourdomain.com");
+
+            $message = "Tautan reset password telah dikirim ke email Anda. Silakan cek kotak masuk Anda.";
+            $message_type = "success";
+            $message .= "<br><small>Link Reset (hanya untuk demo): <a href='" . $reset_link . "'>" . $reset_link . "</a></small>";
+        } else {
+            $message = "Terjadi kesalahan saat membuat tautan reset. Silakan coba lagi.";
+            $message_type = "danger";
+        }
+    } else {
+        $message = "Email tidak terdaftar.";
+        $message_type = "danger";
+    }
 }
 ?>
 
@@ -32,14 +65,16 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Metode Pembayaran</title>
+    <title>Lupa Password</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 
 <body>
+    <div class="loading-container">Loading</div>
+
     <header>
-        <h1 class="fade-in">Pilih Metode Pembayaran</h1>
+        <h1 class="fade-in">Lupa Password</h1>
         <nav>
             <a href="index.php">Beranda</a>
             <a href="daftar-game.php">Daftar Game</a>
@@ -63,24 +98,38 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </nav>
     </header>
 
-    <div class="loading-container">Loading</div>
-
     <main class="fade-in">
-        <section class="form-section">
-            <h2>Pilih Metode Pembayaran</h2>
-            <form class="payment-form" method="POST">
-                <div class="input-group">
-                    <label for="metode">Metode Pembayaran:</label>
-                    <select id="metode" name="metode" required>
-                        <option value="GoPay">GoPay</option>
-                        <option value="DANA">DANA</option>
-                        <option value="OVO">OVO</option>
-                        <option value="Transfer Bank">Transfer Bank</option>
-                    </select>
-                </div>
+        <section class="login-section">
+            <div class="form-container">
+                <div class="right-container">
+                    <div class="right-inner-container">
+                        <h2>Reset Password Anda</h2>
 
-                <button type="submit" class="btn-primary">Lanjut ke Konfirmasi</button>
-            </form>
+                        <?php if ($message): ?>
+                            <div class="alert alert-<?php echo $message_type; ?>">
+                                <?php echo $message; ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <form method="POST">
+                            <div class="input-field">
+                                <input type="email" id="email" name="email" required autocomplete="off" placeholder=" ">
+                                <label for="email">Masukkan Email Anda</label>
+                                <i class="fas fa-envelope"></i>
+                            </div>
+
+                            <button type="submit" class="btn-primary login-btn">
+                                <span>Kirim Tautan Reset</span>
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </form>
+
+                        <div class="register-link">
+                            <p><a href="index.php">Kembali ke Login</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </section>
     </main>
 

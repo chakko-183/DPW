@@ -82,3 +82,52 @@ INSERT INTO transactions (user_id, server, game_id, diamond_amount, payment_meth
 ('123123', '123123', 1, 100, 'DANA', 'success', 25000),
 ('456456', '456456', 2, 50, 'GoPay', 'success', 15000),
 ('789789', '789789', 3, 140, 'OVO', 'failed', 35000);
+
+-- Tambahkan kolom reset_token dan reset_token_expiry ke tabel users
+ALTER TABLE users
+ADD COLUMN reset_token VARCHAR(255) NULL AFTER password,
+ADD COLUMN reset_token_expiry DATETIME NULL AFTER reset_token;
+
+-- Tabel reviews
+CREATE TABLE reviews (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT, -- Jika Anda ingin mengaitkan ulasan dengan user yang login
+    username VARCHAR(255) NOT NULL, -- Nama user, bisa diambil dari sesi atau input
+    rating INT NOT NULL, -- Rating dari 1 sampai 5
+    review_text TEXT NOT NULL,
+    status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending', -- Status ulasan (menunggu, disetujui, ditolak)
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL -- Opsional: Jika user_id null saat user dihapus
+);
+-- Tabel wishlist
+CREATE TABLE wishlist (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    game_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_id, game_id), -- Memastikan satu user hanya bisa punya satu game di wishlist
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (game_id) REFERENCES games(id) ON DELETE CASCADE
+
+    
+);
+
+-- Tabel notifications
+CREATE TABLE notifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NULL, -- NULL jika notifikasi untuk semua user, NOT NULL jika spesifik
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE -- Opsional: Jika user dihapus, notifikasi spesifik juga dihapus
+);
+
+-- Contoh notifikasi untuk semua user (tinggalkan user_id NULL)
+INSERT INTO notifications (user_id, message) VALUES (NULL, 'Selamat datang di layanan top up game kami! Nikmati diskon spesial untuk top up pertama Anda.');
+INSERT INTO notifications (user_id, message) VALUES (NULL, 'Server Mobile Legends sedang dalam pemeliharaan. Top up akan aktif kembali pukul 18:00 WIB.');
+
+-- Contoh notifikasi spesifik user (ganti 1 dengan ID user yang ada)
+-- INSERT INTO notifications (user_id, message) VALUES (1, 'Top up 500 diamond Mobile Legends Anda telah berhasil diproses!');
+ALTER TABLE users
+ADD COLUMN reset_token VARCHAR(255) NULL AFTER password,
+ADD COLUMN reset_token_expiry DATETIME NULL AFTER reset_token;               

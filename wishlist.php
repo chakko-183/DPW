@@ -2,8 +2,9 @@
 session_start();
 require_once 'config/database.php';
 
-if (!isset($_SESSION['topup_data'])) {
-    header('Location: daftar-game.php');
+// Redirect if user is not logged in
+if (!isset($_SESSION['user_id'])) {
+    header('Location: index.php?message=Anda harus login untuk melihat wishlist.&type=danger');
     exit();
 }
 
@@ -19,33 +20,43 @@ if (isset($_SESSION['user_id'])) {
 }
 
 
-if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-    $_SESSION['topup_data']['payment_method'] = $_POST['metode'];
-    header('Location: konfirmasi.php');
-    exit();
+// Fetch wishlist items for the current user
+$wishlist_items = [];
+try {
+    $db->query('SELECT w.id as wishlist_id, g.id as game_id, g.name as game_name, g.image, g.description
+                FROM wishlist w
+                JOIN games g ON w.game_id = g.id
+                WHERE w.user_id = :user_id
+                ORDER BY w.created_at DESC');
+    $db->bind(':user_id', $_SESSION['user_id']);
+    $wishlist_items = $db->resultset();
+} catch (PDOException $e) {
+    error_log("Error fetching wishlist: " . $e->getMessage());
+    $error_message = "Terjadi kesalahan saat memuat wishlist.";
 }
-?>
 
+?>
 <!DOCTYPE html>
 <html lang="id">
 
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Metode Pembayaran</title>
-    <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wishlist Anda</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 
 <body>
+    <div class="loading-container">Loading</div>
+
     <header>
-        <h1 class="fade-in">Pilih Metode Pembayaran</h1>
+        <h1 class="fade-in">Wishlist Anda</h1>
         <nav>
             <a href="index.php">Beranda</a>
             <a href="daftar-game.php">Daftar Game</a>
             <a href="riwayat.php">Riwayat</a>
             <a href="ulasan.php">Ulasan</a>
-            <a href="wishlist.php">Wishlist</a>
             <div class="notification-icon-wrapper">
                 <a href="notifications.php" title="Notifikasi Anda">
                     <i class="fas fa-bell"></i>
@@ -63,24 +74,34 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         </nav>
     </header>
 
-    <div class="loading-container">Loading</div>
-
     <main class="fade-in">
-        <section class="form-section">
-            <h2>Pilih Metode Pembayaran</h2>
-            <form class="payment-form" method="POST">
-                <div class="input-group">
-                    <label for="metode">Metode Pembayaran:</label>
-                    <select id="metode" name="metode" required>
-                        <option value="GoPay">GoPay</option>
-                        <option value="DANA">DANA</option>
-                        <option value="OVO">OVO</option>
-                        <option value="Transfer Bank">Transfer Bank</option>
-                    </select>
-                </div>
+        <section class="wishlist-section">
+            <h2>Game yang Tersimpan di Wishlist</h2>
+            <?php if (isset($error_message)): ?>
+                <div class="alert alert-danger"><?php echo $error_message; ?></div>
+            <?php endif; ?>
 
-                <button type="submit" class="btn-primary">Lanjut ke Konfirmasi</button>
-            </form>
+            <?php if (empty($wishlist_items)): ?>
+                <p class="no-records">Wishlist Anda kosong. Tambahkan game dari <a href="daftar-game.php" class="alert-link">Daftar Game</a>.</p>
+            <?php else: ?>
+                <div class="wishlist-list">
+                    <?php foreach ($wishlist_items as $item): ?>
+                        <div class="wishlist-item" data-wishlist-id="<?php echo $item['wishlist_id']; ?>" data-game-id="<?php echo $item['game_id']; ?>">
+                            <img src="<?php echo htmlspecialchars($item['image']); ?>" alt="<?php echo htmlspecialchars($item['game_name']); ?>">
+                            <div class="wishlist-details">
+                                <h3><?php echo htmlspecialchars($item['game_name']); ?></h3>
+                                <p><?php echo substr(htmlspecialchars($item['description']), 0, 100); ?>...</p>
+                            </div>
+                            <div class="wishlist-actions">
+                                <a href="form-topup.php?game_id=<?php echo $item['game_id']; ?>" class="btn btn-primary btn-small">Top Up Sekarang</a>
+                                <!-- <button class="btn btn-danger btn-small remove-from-wishlist" data-game-id="<?php echo $item['game_id']; ?>">
+                                    <i class="fas fa-trash-alt"></i> Hapus
+                                </button> -->
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
         </section>
     </main>
 

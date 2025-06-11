@@ -2,6 +2,9 @@
 session_start();
 require_once 'config/database.php';
 
+$error = '';
+$success = '';
+
 // Get unread notification count for the current user
 $unread_notifications_count = 0;
 if (isset($_SESSION['user_id'])) {
@@ -17,24 +20,39 @@ if (isset($_SESSION['user_id'])) {
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $email = $_POST['email'];
     $password = $_POST['password'];
+    $confirm_password = $_POST['confirm_password'];
 
-    $db->query('SELECT * FROM users WHERE email = :email');
-    $db->bind(':email', $email);
-    $user = $db->single();
-
-    if ($user && $password === $user['password']) {
-        $_SESSION['user_id'] = $user['id'];
-        $_SESSION['email'] = $user['email'];
-        $_SESSION['role'] = $user['role'];
-
-        if ($user['role'] === 'admin') {
-            header('Location: admin/index.php');
-        } elseif ($user['role'] === 'user') {
-            header('Location: daftar-game.php');
-        }
-        exit();
+    if (empty($email) || empty($password) || empty($confirm_password)) {
+        $error = "Semua field harus diisi.";
+    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        $error = "Format email tidak valid.";
+    } elseif ($password !== $confirm_password) {
+        $error = "Konfirmasi password tidak cocok.";
+    } elseif (strlen($password) < 6) {
+        $error = "Password minimal 6 karakter.";
     } else {
-        $error = "Email atau password salah!";
+        $db->query('SELECT * FROM users WHERE email = :email');
+        $db->bind(':email', $email);
+        $existing_user = $db->single();
+
+        if ($existing_user) {
+            $error = "Email ini sudah terdaftar. Silakan gunakan email lain atau login.";
+        } else {
+            $hashed_password = $password; // Hashing is strongly recommended for production: password_hash($password, PASSWORD_DEFAULT);
+
+            $db->query('INSERT INTO users (email, password, role) VALUES (:email, :password, :role)');
+            $db->bind(':email', $email);
+            $db->bind(':password', $hashed_password);
+            $db->bind(':role', 'user');
+
+            if ($db->execute()) {
+                $success = "Registrasi berhasil! Silakan login.";
+                header('Location: index.php?registered=1');
+                exit();
+            } else {
+                $error = "Terjadi kesalahan saat registrasi. Silakan coba lagi.";
+            }
+        }
     }
 }
 ?>
@@ -45,18 +63,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Top Up Game - Beranda</title>
+    <title>Daftar Akun Baru</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 
 <body>
+    <div class="loading-container">Loading</div>
+
     <header>
-        <h1 class="fade-in">Selamat Datang di Top Up Game</h1>
+        <h1 class="fade-in">Daftar Akun Baru</h1>
         <nav>
             <a href="index.php">Beranda</a>
-            <!-- <a href="riwayat.php">Riwayat</a> -->
-            <!-- <a href="ulasan.php">Ulasan</a>
+            <a href="riwayat.php">Riwayat</a>
+            <a href="ulasan.php">Ulasan</a>
             <a href="wishlist.php">Wishlist</a>
             <div class="notification-icon-wrapper">
                 <a href="notifications.php" title="Notifikasi Anda">
@@ -65,10 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                         <span class="notification-badge"><?php echo $unread_notifications_count; ?></span>
                     <?php endif; ?>
                 </a>
-            </div> -->
-            <?php if (isset($_SESSION['role']) && $_SESSION['role'] == 'admin'): ?>
-                <a href="admin/index.php">Admin Panel</a>
-            <?php endif; ?>
+            </div>
             <?php if (isset($_SESSION['user_id'])): ?>
                 <a href="logout.php">Logout</a>
             <?php endif; ?>
@@ -80,19 +97,18 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             <div class="form-container">
                 <div class="right-container">
                     <div class="right-inner-container">
-                        <h2>Login ke Akun Anda</h2>
+                        <h2>Buat Akun Baru</h2>
 
-                        <?php if (isset($error)): ?>
+                        <?php if (isset($success) && $success): ?>
+                            <div class="alert alert-success">
+                                <?php echo $success; ?> <a href="index.php" class="alert-link">Login Sekarang</a>
+                            </div>
+                        <?php endif; ?>
+                        <?php if (isset($error) && $error): ?>
                             <div class="alert alert-danger">
                                 <?php echo $error; ?>
                             </div>
                         <?php endif; ?>
-                        <?php if (isset($_GET['registered']) && $_GET['registered'] == 1): ?>
-                            <div class="alert alert-success">
-                                Registrasi berhasil! Silakan login.
-                            </div>
-                        <?php endif; ?>
-
 
                         <form method="POST">
                             <div class="input-field">
@@ -108,22 +124,20 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                                 <i class="fas fa-eye-slash toggle-password"></i>
                             </div>
 
-                            <div class="options-container">
-                                <div class="remember-me">
-                                    <input type="checkbox" id="remember">
-                                    <label for="remember">Ingat saya</label>
-                                </div>
-                                <a href="forgot_password.php" class="forgot-password">Lupa Password?</a>
+                            <div class="input-field">
+                                <input type="password" id="confirm_password" name="confirm_password" required autocomplete="off" placeholder=" ">
+                                <label for="confirm_password">Konfirmasi Password</label>
+                                <i class="fas fa-lock"></i>
                             </div>
 
                             <button type="submit" class="btn-primary login-btn">
-                                <span>Login Sekarang</span>
-                                <i class="fas fa-arrow-right"></i>
+                                <span>Daftar Akun</span>
+                                <i class="fas fa-user-plus"></i>
                             </button>
                         </form>
 
                         <div class="register-link">
-                            <p>Belum punya akun? <a href="register.php">Daftar Sekarang</a></p>
+                            <p>Sudah punya akun? <a href="index.php">Login Sekarang</a></p>
                         </div>
                     </div>
                 </div>
