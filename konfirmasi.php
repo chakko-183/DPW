@@ -13,7 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     // Insert transaction
     $db->query('INSERT INTO transactions (user_id, server, game_id, diamond_amount, payment_method, status, total_price) 
                 VALUES (:user_id, :server, :game_id, :diamond_amount, :payment_method, :status, :total_price)');
-    
+
     $db->bind(':user_id', $data['userid']);
     $db->bind(':server', $data['server']);
     $db->bind(':game_id', $data['game_id']);
@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $db->bind(':payment_method', $data['payment_method']);
     $db->bind(':status', 'success');
     $db->bind(':total_price', $data['price']);
-    
+
     if ($db->execute()) {
         unset($_SESSION['topup_data']);
         header('Location: riwayat.php?success=1');
@@ -32,12 +32,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Konfirmasi & Checkout</title>
     <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
     <header>
         <h1>Konfirmasi & Checkout</h1>
@@ -68,4 +70,5 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <footer>&copy; 2025 Top Up Game. All rights reserved.</footer>
     <script src="script.js"></script>
 </body>
+
 </html>

@@ -13,12 +13,14 @@ $transactions = $db->resultset();
 
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Riwayat Transaksi</title>
     <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
     <header>
         <h1 class="fade-in">Report Riwayat Transaksi</h1>
@@ -43,12 +45,12 @@ $transactions = $db->resultset();
         <ul class="history-list">
             <?php foreach ($transactions as $transaction): ?>
                 <li>
-                    <?php echo $transaction['game_name']; ?> - 
-                    <?php echo $transaction['diamond_amount']; ?> Diamonds - 
+                    <?php echo $transaction['game_name']; ?> -
+                    <?php echo $transaction['diamond_amount']; ?> Diamonds -
                     <span style="color: <?php echo $transaction['status'] == 'success' ? '#4CAF50' : ($transaction['status'] == 'failed' ? '#f44336' : '#ff9800'); ?>">
                         <?php echo ucfirst($transaction['status']); ?>
-                    </span> - 
-                    Rp <?php echo number_format($transaction['total_price'], 0, ',', '.'); ?> - 
+                    </span> -
+                    Rp <?php echo number_format($transaction['total_price'], 0, ',', '.'); ?> -
                     <?php echo date('d/m/Y H:i', strtotime($transaction['created_at'])); ?>
                 </li>
             <?php endforeach; ?>
@@ -58,4 +60,5 @@ $transactions = $db->resultset();
     <footer>&copy; 2025 Top Up Game. All rights reserved.</footer>
     <script src="script.js"></script>
 </body>
+
 </html>

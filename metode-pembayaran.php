@@ -16,12 +16,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Metode Pembayaran</title>
     <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
     <header>
         <h1 class="fade-in">Metode Pembayaran</h1>
@@ -50,4 +52,5 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <footer>&copy; 2025 Top Up Game. All rights reserved.</footer>
     <script src="script.js"></script>
 </body>
+
 </html>

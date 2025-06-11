@@ -18,12 +18,12 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $userid = $_POST['userid'];
     $server = $_POST['server'];
     $package_id = $_POST['jumlah'];
-    
+
     // Get package details
     $db->query('SELECT * FROM diamond_packages WHERE id = :id');
     $db->bind(':id', $package_id);
     $package = $db->single();
-    
+
     // Store in session for next step
     $_SESSION['topup_data'] = [
         'userid' => $userid,
@@ -34,7 +34,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         'diamond_amount' => $package['amount'],
         'price' => $package['price']
     ];
-    
+
     header('Location: metode-pembayaran.php');
     exit();
 }
@@ -42,12 +42,14 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Form Top Up</title>
     <link rel="stylesheet" href="style.css" />
 </head>
+
 <body>
     <div class="loading-container">Loading</div>
 
@@ -83,4 +85,5 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <footer>&copy; 2025 Top Up Game. All rights reserved.</footer>
     <script src="script.js"></script>
 </body>
+
 </html>

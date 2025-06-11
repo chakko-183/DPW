@@ -24,6 +24,7 @@ $success_transactions = $db->single()['total'];
 
 <!DOCTYPE html>
 <html lang="id">
+
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -35,29 +36,34 @@ $success_transactions = $db->single()['total'];
             margin: 0 auto;
             padding: 20px;
         }
+
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 20px;
             margin-bottom: 30px;
         }
+
         .stat-card {
             background: #555555;
             padding: 20px;
             border-radius: 10px;
             text-align: center;
         }
+
         .stat-number {
             font-size: 2em;
             font-weight: bold;
             color: #ff4b2b;
         }
+
         .admin-nav {
             display: flex;
             gap: 20px;
             margin-bottom: 30px;
             flex-wrap: wrap;
         }
+
         .admin-nav a {
             background: #ff4b2b;
             color: white;
@@ -66,11 +72,13 @@ $success_transactions = $db->single()['total'];
             border-radius: 5px;
             transition: background 0.3s;
         }
+
         .admin-nav a:hover {
             background: #ff3b1b;
         }
     </style>
 </head>
+
 <body>
     <header>
         <h1 class="fade-in">Admin Dashboard</h1>
@@ -115,4 +123,5 @@ $success_transactions = $db->single()['total'];
 
     <footer>&copy; 2025 Top Up Game. All rights reserved.</footer>
 </body>
+
 </html>

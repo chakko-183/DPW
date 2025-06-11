@@ -16,16 +16,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // Toggle password visibility
-  const togglePassword = document.querySelector('.toggle-password');
+  const togglePassword = document.querySelector(".toggle-password");
   if (togglePassword) {
-    togglePassword.addEventListener('click', function() {
-      const passwordInput = document.querySelector('#password');
-      const type = passwordInput.getAttribute('type') === 'password' ? 'text' : 'password';
-      passwordInput.setAttribute('type', type);
-      
+    togglePassword.addEventListener("click", function () {
+      const passwordInput = document.querySelector("#password");
+      const type =
+        passwordInput.getAttribute("type") === "password" ? "text" : "password";
+      passwordInput.setAttribute("type", type);
+
       // Toggle icon
-      this.classList.toggle('fa-eye');
-      this.classList.toggle('fa-eye-slash');
+      this.classList.toggle("fa-eye");
+      this.classList.toggle("fa-eye-slash");
     });
   }
 });
@@ -33,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
 const loadingContainer = document.querySelector(".loading-container");
 
 setTimeout(() => {
-    if (loadingContainer) {
-        loadingContainer.style.display = "none";
-    }
+  if (loadingContainer) {
+    loadingContainer.style.display = "none";
+  }
 }, 1000);
